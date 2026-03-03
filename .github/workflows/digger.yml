@@ -1,0 +1,47 @@
+name: Digger Terraform
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, closed]
+  issue_comment:
+    types: [created]
+    # Digger responds to "digger plan" and "digger apply" PR comments
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+  pull-requests: write
+  issues: read
+  statuses: write
+
+jobs:
+  digger:
+    name: Digger Run
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.x
+
+      - name: Run Digger
+        uses: diggerhq/digger@v0.6.0
+        with:
+          setup-aws: false           # We handle AWS auth above via OIDC
+          disable-locking: false     # Use DynamoDB-based PR locks
+          no-backend: false
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

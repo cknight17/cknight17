@@ -1,0 +1,27 @@
+projects:
+  - name: dev
+    dir: terraform/environments/dev
+    workflow: default
+    # Digger will run plan on PR, apply on comment "digger apply"
+    include_patterns:
+      - "terraform/environments/dev/**"
+      - "terraform/modules/**"
+
+# Apply only happens via explicit "digger apply" comment on the PR.
+# This is the safest pattern: plan is automatic, apply is manual.
+auto_merge: false
+
+# Use your existing DynamoDB table for Digger's PR-level locks
+# (separate from Terraform state locks)
+collect_usage_data: false
+
+workflows:
+  default:
+    plan:
+      steps:
+        - init
+        - plan
+    apply:
+      steps:
+        - init
+        - apply
