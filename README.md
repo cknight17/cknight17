@@ -81,7 +81,7 @@ Developer ──► PR to main ──► GitHub Actions
 ## Quick Start
 
 ### Prerequisites
-- AWS CLI configured with credentials for account `659474314285`
+- AWS CLI configured with credentials for your AWS account
 - Terraform >= 1.5
 - kubectl
 
@@ -95,17 +95,27 @@ terraform init
 terraform apply
 ```
 
-Save the `github_actions_role_arn` output — you'll need it next.
+Save the `github_actions_role_arn` and `state_bucket` outputs — you'll need them next.
 
-### 2. Configure GitHub Secrets
+### 2. Initialize dev environment locally
+
+```bash
+cd terraform/environments/dev
+# Create backend config with your account's state bucket
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+echo "bucket = \"cknight17-terraform-state-${ACCOUNT_ID}\"" > backend.hcl
+terraform init -backend-config=backend.hcl
+```
+
+### 3. Configure GitHub Secrets
 
 Go to **Settings → Secrets and variables → Actions** in your GitHub repo:
 
 | Secret Name    | Value                                                        |
 |----------------|--------------------------------------------------------------|
-| `AWS_ROLE_ARN` | `arn:aws:iam::659474314285:role/cknight17-github-actions`    |
+| `AWS_ROLE_ARN` | The `github_actions_role_arn` output from the bootstrap step  |
 
-### 3. Deploy via PR
+### 4. Deploy via PR
 
 ```bash
 git checkout -b initial-infra
@@ -116,14 +126,14 @@ git push -u origin initial-infra
 # Merge the PR
 ```
 
-### 4. Connect to Cluster
+### 5. Connect to Cluster
 
 ```bash
 aws eks update-kubeconfig --name cknight17-dev --region us-east-1
 kubectl get nodes
 ```
 
-### 5. Access ArgoCD
+### 6. Access ArgoCD
 
 ```bash
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d

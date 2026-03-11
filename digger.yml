@@ -19,9 +19,11 @@ workflows:
   default:
     plan:
       steps:
-        - init
+        - init:
+            extra_args: ["-backend-config=backend.hcl"]
         - plan
     apply:
       steps:
-        - init
+        - init:
+            extra_args: ["-backend-config=backend.hcl"]
         - apply

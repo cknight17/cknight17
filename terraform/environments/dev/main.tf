@@ -21,11 +21,11 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = "cknight17-terraform-state-659474314285"
     key            = "environments/dev/terraform.tfstate"
     region         = "us-east-1"
     dynamodb_table = "cknight17-terraform-locks"
     encrypt        = true
+    # bucket is provided via -backend-config or backend.hcl
   }
 }
 

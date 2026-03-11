@@ -36,6 +36,11 @@ jobs:
         with:
           terraform_version: 1.9.x
 
+      - name: Generate backend config
+        run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          echo "bucket = \"cknight17-terraform-state-${ACCOUNT_ID}\"" > terraform/environments/dev/backend.hcl
+
       - name: Run Digger
         uses: diggerhq/digger@v0.6.0
         with:

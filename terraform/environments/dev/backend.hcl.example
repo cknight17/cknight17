@@ -1,0 +1,7 @@
+# Copy this to backend.hcl and fill in your AWS account ID:
+#   cp backend.hcl.example backend.hcl
+#
+# Then init with:
+#   terraform init -backend-config=backend.hcl
+
+bucket = "cknight17-terraform-state-<YOUR_AWS_ACCOUNT_ID>"

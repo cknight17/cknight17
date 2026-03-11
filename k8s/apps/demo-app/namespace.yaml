@@ -10,4 +10,4 @@ metadata:
   namespace: demo-app
   annotations: {}
   # Phase 3: Add IRSA annotation here, e.g.:
-  # eks.amazonaws.com/role-arn: arn:aws:iam::659474314285:role/cknight17-dev-s3-access
+  # eks.amazonaws.com/role-arn: arn:aws:iam::<YOUR_ACCOUNT_ID>:role/cknight17-dev-s3-access
