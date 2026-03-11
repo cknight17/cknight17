@@ -46,7 +46,7 @@ jobs:
         with:
           setup-aws: false           # We handle AWS auth above via OIDC
           disable-locking: false     # Use DynamoDB-based PR locks
-          no-backend: false
+          no-backend: true           # Run fully OSS, no Digger Cloud
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
