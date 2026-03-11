@@ -4,15 +4,15 @@
 ################################################################################
 
 resource "aws_rds_cluster" "this" {
-  cluster_identifier     = "${var.cluster_name}-aurora"
-  engine                 = "aurora-postgresql"
-  engine_mode            = "provisioned"
-  engine_version         = "16.4"
-  database_name          = var.database_name
-  master_username        = var.master_username
+  cluster_identifier          = "${var.cluster_name}-aurora"
+  engine                      = "aurora-postgresql"
+  engine_mode                 = "provisioned"
+  engine_version              = "16.4"
+  database_name               = var.database_name
+  master_username             = var.master_username
   manage_master_user_password = true
-  storage_encrypted      = true
-  skip_final_snapshot    = true # Set false for production
+  storage_encrypted           = true
+  skip_final_snapshot         = true # Set false for production
 
   vpc_security_group_ids = [aws_security_group.aurora.id]
   db_subnet_group_name   = aws_db_subnet_group.this.name
