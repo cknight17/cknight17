@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if command -v terraform &>/dev/null; then
+  echo "Running terraform fmt check..."
+  if ! terraform fmt -check -recursive terraform/; then
+    echo ""
+    echo "Terraform formatting errors found. Run 'terraform fmt -recursive terraform/' to fix."
+    exit 1
+  fi
+fi
