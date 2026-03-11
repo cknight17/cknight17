@@ -10,11 +10,6 @@ projects:
 auto_merge: false
 collect_usage_data: false
 
-locking:
-  provider: aws
-  aws:
-    table_name: cknight17-digger-locks
-    region: us-east-1
 
 workflows:
   default:

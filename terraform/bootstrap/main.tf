@@ -155,12 +155,18 @@ resource "aws_iam_access_key" "admin" {
 ################################################################################
 
 resource "aws_dynamodb_table" "digger_locks" {
-  name         = "cknight17-digger-locks"
+  name         = "DiggerDynamoDBLockTable"
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "PK"
+  range_key    = "SK"
 
   attribute {
     name = "PK"
+    type = "S"
+  }
+
+  attribute {
+    name = "SK"
     type = "S"
   }
 }
