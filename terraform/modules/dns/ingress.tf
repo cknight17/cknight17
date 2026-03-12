@@ -64,7 +64,7 @@ resource "kubectl_manifest" "demo_app_ingress" {
         "alb.ingress.kubernetes.io/certificate-arn"  = aws_acm_certificate.wildcard.arn
         "alb.ingress.kubernetes.io/listen-ports"     = jsonencode([{ HTTPS = 443 }])
         "alb.ingress.kubernetes.io/ssl-redirect"     = "443"
-        "alb.ingress.kubernetes.io/healthcheck-path" = "/ping"
+        "alb.ingress.kubernetes.io/healthcheck-path" = "/"
         "alb.ingress.kubernetes.io/group.name"       = var.domain_name
       }
     }
@@ -80,7 +80,7 @@ resource "kubectl_manifest" "demo_app_ingress" {
               service = {
                 name = "demo-app"
                 port = {
-                  number = 4180
+                  number = 80
                 }
               }
             }
