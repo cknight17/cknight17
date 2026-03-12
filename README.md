@@ -5,70 +5,149 @@ Infrastructure changes deploy via **Digger** (Terraform CI/CD in GitHub Actions)
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────┐
-│                    AWS Account                       │
-│  ┌───────────────────────────────────────────────┐  │
-│  │                 VPC (10.0.0.0/16)             │  │
-│  │  ┌─────────────┐       ┌─────────────┐       │  │
-│  │  │ Private Sub  │       │ Private Sub  │      │  │
-│  │  │   AZ-1       │       │   AZ-2       │      │  │
-│  │  │  ┌────────┐  │       │  ┌────────┐  │      │  │
-│  │  │  │EKS Node│  │       │  │EKS Node│  │      │  │
-│  │  │  └────────┘  │       │  └────────┘  │      │  │
-│  │  └─────────────┘       └─────────────┘       │  │
-│  │  ┌─────────────┐       ┌─────────────┐       │  │
-│  │  │ Public Sub   │       │ Public Sub   │      │  │
-│  │  │   AZ-1       │       │   AZ-2       │      │  │
-│  │  └─────────────┘       └─────────────┘       │  │
-│  └───────────────────────────────────────────────┘  │
-│                                                      │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐          │
-│  │  Aurora   │  │ DynamoDB │  │    S3    │          │
-│  │ (Phase 3) │  │(Phase 3) │  │(Phase 3) │          │
-│  └──────────┘  └──────────┘  └──────────┘          │
-└─────────────────────────────────────────────────────┘
+### Infrastructure
+
+```mermaid
+graph TB
+    subgraph Internet
+        User([User / Browser])
+        GoDaddy[GoDaddy<br/>knighttechnology.net<br/>NS → Route 53]
+    end
+
+    subgraph AWS["AWS Account (659474314285)"]
+        R53[Route 53<br/>knighttechnology.net]
+        ACM[ACM<br/>*.knighttechnology.net]
+
+        subgraph VPC["VPC (10.0.0.0/16)"]
+            subgraph Public["Public Subnets"]
+                ALB[Application Load Balancer<br/>HTTPS :443]
+                NAT[NAT Gateway]
+                IGW[Internet Gateway]
+            end
+
+            subgraph Private["Private Subnets (AZ-1 + AZ-2)"]
+                subgraph EKS["EKS Cluster (K8s 1.32)"]
+                    ALBC[AWS LB Controller<br/>IRSA]
+                    ArgoCD[ArgoCD<br/>argocd.knighttechnology.net]
+                    Demo[Demo App<br/>demo.knighttechnology.net]
+                end
+                Node1[EKS Node<br/>t3.medium]
+                Node2[EKS Node<br/>t3.medium]
+            end
+        end
+
+        subgraph State["Terraform State"]
+            S3[(S3 Bucket<br/>terraform.tfstate)]
+            DDB[(DynamoDB<br/>State Locks)]
+        end
+
+        subgraph IAM["IAM"]
+            AdminUser[IAM User: cknight<br/>AdministratorAccess]
+            GHRole[IAM Role: github-actions<br/>OIDC Federation]
+        end
+    end
+
+    User -->|HTTPS| R53
+    R53 -->|Alias| ALB
+    ALB -->|TLS via| ACM
+    ALB -->|/argocd.*/ | ArgoCD
+    ALB -->|/demo.*/ | Demo
+    EKS --- Node1
+    EKS --- Node2
+    Private -->|Outbound via| NAT
+    NAT --> IGW
+    ALBC -.->|Manages| ALB
+    ArgoCD -.->|GitOps sync| GitHub
+
+    style AWS fill:#f5f5f5,stroke:#232f3e
+    style VPC fill:#e8f4fd,stroke:#1a73e8
+    style EKS fill:#e8f5e9,stroke:#2e7d32
+    style Public fill:#fff3e0,stroke:#e65100
+    style Private fill:#e3f2fd,stroke:#1565c0
+    style State fill:#fce4ec,stroke:#c62828
+    style IAM fill:#f3e5f5,stroke:#6a1b9a
 ```
 
-## CI/CD Flow
+### CI/CD Flow
 
-```
-Developer ──► PR to main ──► GitHub Actions
-                                  │
-                         ┌────────┴────────┐
-                         │  Digger + OIDC   │
-                         │                  │
-                         │  1. tf fmt check │
-                         │  2. tf plan      │
-                         │  3. Comment plan │
-                         │     on PR        │
-                         └────────┬────────┘
-                                  │
-                    PR comment: "digger apply"
-                                  │
-                         ┌────────┴────────┐
-                         │  tf apply        │
-                         │  (in GH Actions) │
-                         └─────────────────┘
+```mermaid
+sequenceDiagram
+    participant Dev as Developer
+    participant GH as GitHub
+    participant GA as GitHub Actions
+    participant OIDC as AWS OIDC
+    participant TF as Terraform
+    participant AWS as AWS Resources
+
+    Dev->>GH: Open PR to main
+    GH->>GA: Trigger workflow (pull_request)
+    GA->>OIDC: Assume role via OIDC<br/>(no static credentials)
+    OIDC-->>GA: Temporary credentials
+
+    rect rgb(232, 245, 233)
+        Note over GA,TF: Automatic on PR
+        GA->>TF: terraform fmt -check
+        GA->>TF: terraform plan
+        TF-->>GA: Plan output
+        GA->>GH: Comment plan on PR
+    end
+
+    Dev->>GH: Comment "digger apply"
+    GH->>GA: Trigger workflow (issue_comment)
+    GA->>OIDC: Assume role via OIDC
+
+    rect rgb(255, 243, 224)
+        Note over GA,AWS: Manual trigger
+        GA->>TF: terraform apply
+        TF->>AWS: Create/update resources
+        GA->>GH: Comment with apply run link
+    end
+
+    Dev->>GH: Merge PR
 ```
 
-**No static AWS credentials.** GitHub Actions authenticates via OIDC → assumes an IAM role → gets temporary credentials. Digger provides PR-level locking, plan comments, and safe apply-before-merge.
+### GitOps Application Delivery
+
+```mermaid
+graph LR
+    subgraph GitHub
+        Repo[cknight17/cknight17<br/>k8s/ manifests]
+    end
+
+    subgraph EKS["EKS Cluster"]
+        ArgoCD[ArgoCD]
+        RootApp[Root App<br/>app-of-apps]
+        DemoApp[demo-app<br/>namespace]
+    end
+
+    Repo -->|watches main branch| ArgoCD
+    ArgoCD -->|syncs| RootApp
+    RootApp -->|manages| DemoApp
+
+    style GitHub fill:#f5f5f5,stroke:#333
+    style EKS fill:#e8f5e9,stroke:#2e7d32
+```
+
+**No static AWS credentials.** GitHub Actions authenticates via OIDC, assumes an IAM role, and gets temporary credentials. Digger orchestrates plan/apply with PR comments.
 
 ## Repository Structure
 
 ```
 .
 ├── digger.yml              # Digger project config
+├── .githooks/pre-commit    # Terraform fmt pre-commit hook
 ├── .github/workflows/
 │   ├── digger.yml          # Digger plan/apply workflow
 │   └── lint.yml            # Format & validate checks
 ├── terraform/
-│   ├── bootstrap/          # S3 backend, DynamoDB locks, OIDC provider, GH Actions role
+│   ├── bootstrap/          # S3 backend, DynamoDB locks, OIDC provider, IAM user, GH Actions role
 │   ├── environments/dev/   # Dev environment root module
 │   └── modules/
 │       ├── vpc/            # VPC, subnets, NAT, IGW
-│       ├── eks/            # EKS cluster + managed node groups
+│       ├── eks/            # EKS cluster + managed node groups + access entries
 │       ├── argocd/         # ArgoCD Helm installation
+│       ├── alb-controller/ # AWS Load Balancer Controller (Helm + IRSA)
+│       ├── dns/            # Route 53, ACM wildcard cert, Ingress resources
 │       ├── aurora/         # Aurora PostgreSQL (Phase 3)
 │       ├── dynamodb/       # DynamoDB tables (Phase 3)
 │       └── s3/             # S3 buckets (Phase 3)
@@ -135,24 +214,35 @@ kubectl get nodes
 
 ### 6. Access ArgoCD
 
+Get the admin password, then open https://argocd.knighttechnology.net:
+
 ```bash
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
-kubectl port-forward svc/argocd-server -n argocd 8080:443
-# Open https://localhost:8080, user: admin
+# Open https://argocd.knighttechnology.net, user: admin
 ```
+
+## Live URLs
+
+| Service | URL |
+|---------|-----|
+| ArgoCD | https://argocd.knighttechnology.net |
+| Demo App | https://demo.knighttechnology.net |
 
 ## Phases
 
 | Phase | Description | Status |
 |-------|-------------|--------|
-| 1 | VPC + EKS + IAM/OIDC | ✅ Ready |
-| 2 | ArgoCD GitOps | ✅ Ready |
-| 2.5 | Digger CI/CD + OIDC auth | ✅ Ready |
-| 3 | Aurora / DynamoDB / S3 | 📋 Scaffolded |
-| 4 | Demo workloads | 📋 Scaffolded |
+| 1 | VPC + EKS + IAM/OIDC | ✅ Running |
+| 2 | ArgoCD GitOps | ✅ Running |
+| 2.5 | Digger CI/CD + OIDC auth | ✅ Running |
+| 3 | DNS + HTTPS + ALB Ingress | ✅ Running |
+| 4 | Aurora / DynamoDB / S3 | 📋 Scaffolded |
+| 5 | Demo workloads | 📋 Scaffolded |
 
 ## Cost Estimate (Dev)
 - EKS control plane: ~$73/mo
-- 2× t3.medium nodes: ~$60/mo
+- 2x t3.medium nodes: ~$60/mo
 - NAT Gateway: ~$32/mo
-- **Total: ~$165/mo** (can scale down to 1 node / ~$135/mo)
+- ALB: ~$16/mo
+- Route 53 hosted zone: ~$0.50/mo
+- **Total: ~$181/mo** (can scale down to 1 node / ~$151/mo)
