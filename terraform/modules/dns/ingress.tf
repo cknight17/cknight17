@@ -19,12 +19,6 @@ resource "kubectl_manifest" "argocd_ingress" {
         "alb.ingress.kubernetes.io/healthcheck-path" = "/healthz"
         "alb.ingress.kubernetes.io/backend-protocol" = "HTTPS"
         "alb.ingress.kubernetes.io/group.name"       = var.domain_name
-        "alb.ingress.kubernetes.io/conditions.argocd-server" = jsonencode([{
-          field = "host-header"
-          hostHeaderConfig = {
-            values = ["argocd.${var.domain_name}"]
-          }
-        }])
       }
     }
     spec = {
