@@ -193,6 +193,20 @@ resource "kubectl_manifest" "oauth2_proxy_secret" {
   depends_on = [module.argocd]
 }
 
+################################################################################
+# ECR Repository for demo app
+################################################################################
+
+resource "aws_ecr_repository" "demo_app" {
+  name                 = "cknight17/demo-app"
+  image_tag_mutability = "IMMUTABLE"
+  force_delete         = true
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+}
+
 module "alb_controller" {
   source = "../../modules/alb-controller"
 
