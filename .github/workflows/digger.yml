@@ -57,6 +57,7 @@ jobs:
           setup-aws: false           # We handle AWS auth above via OIDC
           disable-locking: true      # Terraform state lock is sufficient for solo use
           no-backend: true           # Run fully OSS, no Digger Cloud
+          configure-checkout: false  # We handle checkout above (including PR branch for issue_comment)
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
