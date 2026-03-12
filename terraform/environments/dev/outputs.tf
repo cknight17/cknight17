@@ -17,3 +17,16 @@ output "argocd_initial_password" {
 output "oidc_provider_arn" {
   value = module.eks.oidc_provider_arn
 }
+
+output "nameservers" {
+  value       = module.dns.nameservers
+  description = "Set these as nameservers in GoDaddy"
+}
+
+output "argocd_url" {
+  value = "https://argocd.${var.domain_name}"
+}
+
+output "demo_app_url" {
+  value = "https://demo.${var.domain_name}"
+}

@@ -63,3 +63,8 @@ variable "argocd_chart_version" {
   type    = string
   default = "7.7.5"
 }
+
+variable "domain_name" {
+  type    = string
+  default = "knighttechnology.net"
+}
