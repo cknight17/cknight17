@@ -48,7 +48,8 @@ resource "helm_release" "argocd" {
         })
       }
       rbac = {
-        "policy.csv" = "g, *, role:readonly"
+        "policy.csv"     = "g, cknight17, role:admin"
+        "policy.default" = "role:readonly"
       }
     }
   })]
