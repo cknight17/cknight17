@@ -68,3 +68,15 @@ variable "domain_name" {
   type    = string
   default = "knighttechnology.net"
 }
+
+variable "github_oauth_client_id" {
+  description = "GitHub OAuth App client ID for Cognito federation"
+  type        = string
+  sensitive   = true
+}
+
+variable "github_oauth_client_secret" {
+  description = "GitHub OAuth App client secret for Cognito federation"
+  type        = string
+  sensitive   = true
+}
