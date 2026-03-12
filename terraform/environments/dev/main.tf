@@ -135,7 +135,31 @@ module "dns" {
   domain_name  = var.domain_name
   cluster_name = local.cluster_name
 
-  depends_on = [module.alb_controller]
+  enable_cognito_auth         = true
+  cognito_user_pool_arn       = module.cognito.user_pool_arn
+  cognito_user_pool_client_id = module.cognito.alb_client_id
+  cognito_user_pool_domain    = module.cognito.user_pool_domain
+
+  depends_on = [module.alb_controller, module.cognito]
+}
+
+module "cognito" {
+  source = "../../modules/cognito"
+
+  cluster_name         = local.cluster_name
+  domain_name          = var.domain_name
+  github_client_id     = var.github_oauth_client_id
+  github_client_secret = var.github_oauth_client_secret
+
+  callback_urls = [
+    "https://argocd.${var.domain_name}/oauth2/idpresponse",
+    "https://demo.${var.domain_name}/oauth2/idpresponse",
+  ]
+
+  logout_urls = [
+    "https://argocd.${var.domain_name}",
+    "https://demo.${var.domain_name}",
+  ]
 }
 
 module "alb_controller" {
