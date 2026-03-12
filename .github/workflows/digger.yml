@@ -45,7 +45,7 @@ jobs:
         uses: diggerhq/digger@v0.6.0
         with:
           setup-aws: false           # We handle AWS auth above via OIDC
-          disable-locking: false     # Use DynamoDB-based PR locks
+          disable-locking: true      # Terraform state lock is sufficient for solo use
           no-backend: true           # Run fully OSS, no Digger Cloud
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
