@@ -12,7 +12,7 @@ import (
 func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, "Hello, World! rev c")
+		fmt.Fprintln(w, "Hello, World! rev d")
 	})
 
 	server := &http.Server{
