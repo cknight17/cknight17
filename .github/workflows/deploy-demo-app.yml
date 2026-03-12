@@ -60,17 +60,6 @@ jobs:
 
       - name: Trigger ArgoCD sync
         run: |
-          # Get ArgoCD admin password
-          ARGOCD_PWD=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
-          ARGOCD_URL="https://argocd.knighttechnology.net"
-
-          # Login and get token
-          TOKEN=$(curl -sk "${ARGOCD_URL}/api/v1/session" \
-            -d "{\"username\":\"admin\",\"password\":\"${ARGOCD_PWD}\"}" \
-            | jq -r '.token')
-
-          # Trigger a hard refresh on the demo-app
-          curl -sk "${ARGOCD_URL}/api/v1/applications/demo-app?refresh=hard" \
-            -H "Authorization: Bearer ${TOKEN}"
-
+          kubectl -n argocd annotate application demo-app \
+            argocd.argoproj.io/refresh=hard --overwrite
           echo "ArgoCD refresh triggered"
