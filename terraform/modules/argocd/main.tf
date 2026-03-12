@@ -22,6 +22,40 @@ resource "helm_release" "argocd" {
     value = "ClusterIP"
   }
 
+  # ArgoCD URL (used by Dex for redirect)
+  set {
+    name  = "configs.params.server\\.url"
+    value = "https://argocd.${var.domain_name}"
+  }
+
+  # Dex GitHub OAuth connector
+  set {
+    name = "configs.cm.dex\\.config"
+    value = yamlencode({
+      connectors = [{
+        type = "github"
+        id   = "github"
+        name = "GitHub"
+        config = {
+          clientID     = var.github_client_id
+          clientSecret = var.github_client_secret
+        }
+      }]
+      staticClients = [{
+        id           = "demo-app"
+        name         = "Demo App"
+        secret       = var.dex_demo_app_client_secret
+        redirectURIs = ["https://demo.${var.domain_name}/oauth2/callback"]
+      }]
+    })
+  }
+
+  # Allow any authenticated user via Dex
+  set {
+    name  = "configs.rbac.policy\\.csv"
+    value = "g, *, role:readonly"
+  }
+
   # Reduce resource usage for dev
   set {
     name  = "controller.resources.requests.cpu"
