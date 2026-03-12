@@ -51,8 +51,8 @@ jobs:
           GITHUB_CONTEXT: ${{ toJson(github) }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NO_BACKEND: "true"
-          TF_VAR_github_oauth_client_id: ${{ secrets.GITHUB_OAUTH_CLIENT_ID }}
-          TF_VAR_github_oauth_client_secret: ${{ secrets.GITHUB_OAUTH_CLIENT_SECRET }}
+          TF_VAR_github_oauth_client_id: ${{ secrets.OAUTH_CLIENT_ID }}
+          TF_VAR_github_oauth_client_secret: ${{ secrets.OAUTH_CLIENT_SECRET }}
 
       - name: Comment link to apply run
         if: github.event_name == 'issue_comment'
