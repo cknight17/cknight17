@@ -7,7 +7,7 @@ output "user_pool_arn" {
 }
 
 output "user_pool_domain" {
-  value = "auth.${var.domain_name}"
+  value = aws_cognito_user_pool_domain.this.domain
 }
 
 output "alb_client_id" {

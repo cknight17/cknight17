@@ -148,8 +148,6 @@ module "cognito" {
 
   cluster_name         = local.cluster_name
   domain_name          = var.domain_name
-  zone_id              = module.dns.zone_id
-  certificate_arn      = module.dns.certificate_arn
   github_client_id     = var.github_oauth_client_id
   github_client_secret = var.github_oauth_client_secret
 

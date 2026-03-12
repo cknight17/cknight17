@@ -8,16 +8,6 @@ variable "domain_name" {
   type        = string
 }
 
-variable "zone_id" {
-  description = "Route 53 hosted zone ID"
-  type        = string
-}
-
-variable "certificate_arn" {
-  description = "ACM certificate ARN for the custom Cognito domain"
-  type        = string
-}
-
 variable "github_client_id" {
   description = "GitHub OAuth App client ID"
   type        = string

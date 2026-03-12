@@ -59,21 +59,8 @@ resource "aws_cognito_identity_provider" "github" {
 ################################################################################
 
 resource "aws_cognito_user_pool_domain" "this" {
-  domain          = "auth.${var.domain_name}"
-  user_pool_id    = aws_cognito_user_pool.this.id
-  certificate_arn = var.certificate_arn
-}
-
-resource "aws_route53_record" "cognito" {
-  zone_id = var.zone_id
-  name    = "auth.${var.domain_name}"
-  type    = "A"
-
-  alias {
-    name                   = aws_cognito_user_pool_domain.this.cloudfront_distribution
-    zone_id                = aws_cognito_user_pool_domain.this.cloudfront_distribution_zone_id
-    evaluate_target_health = false
-  }
+  domain       = "${var.cluster_name}-auth"
+  user_pool_id = aws_cognito_user_pool.this.id
 }
 
 ################################################################################
