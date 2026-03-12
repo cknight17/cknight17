@@ -166,8 +166,8 @@ module "cognito" {
   github_client_id     = var.github_oauth_client_id
   github_client_secret = var.github_oauth_client_secret
 
-  callback_urls = []
-  logout_urls   = []
+  callback_urls = ["https://localhost/callback"]
+  logout_urls   = ["https://localhost"]
 }
 
 ################################################################################
