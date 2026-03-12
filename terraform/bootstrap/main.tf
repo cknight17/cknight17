@@ -22,11 +22,23 @@ provider "aws" {
 }
 
 ################################################################################
+# Data Sources
+################################################################################
+
+data "aws_caller_identity" "current" {}
+
+variable "admin_username" {
+  type        = string
+  default     = "cknight"
+  description = "IAM username for day-to-day admin access"
+}
+
+################################################################################
 # Terraform State Backend
 ################################################################################
 
 resource "aws_s3_bucket" "terraform_state" {
-  bucket = "cknight17-terraform-state-659474314285"
+  bucket = "cknight17-terraform-state-${data.aws_caller_identity.current.account_id}"
 
   lifecycle {
     prevent_destroy = true
@@ -118,16 +130,43 @@ resource "aws_iam_role_policy_attachment" "github_actions_admin" {
 }
 
 ################################################################################
+# Admin IAM User (day-to-day CLI/console access — replaces root usage)
+################################################################################
+
+resource "aws_iam_user" "admin" {
+  name = var.admin_username
+}
+
+resource "aws_iam_user_policy_attachment" "admin" {
+  user       = aws_iam_user.admin.name
+  policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
+}
+
+resource "aws_iam_user_login_profile" "admin" {
+  user = aws_iam_user.admin.name
+}
+
+resource "aws_iam_access_key" "admin" {
+  user = aws_iam_user.admin.name
+}
+
+################################################################################
 # Digger DynamoDB Lock Table (separate from Terraform state locks)
 ################################################################################
 
 resource "aws_dynamodb_table" "digger_locks" {
-  name         = "cknight17-digger-locks"
+  name         = "DiggerDynamoDBLockTable"
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "PK"
+  range_key    = "SK"
 
   attribute {
     name = "PK"
+    type = "S"
+  }
+
+  attribute {
+    name = "SK"
     type = "S"
   }
 }
@@ -151,4 +190,26 @@ output "github_actions_role_arn" {
 
 output "digger_lock_table" {
   value = aws_dynamodb_table.digger_locks.name
+}
+
+output "admin_user_name" {
+  value = aws_iam_user.admin.name
+}
+
+output "admin_access_key_id" {
+  value = aws_iam_access_key.admin.id
+}
+
+output "admin_secret_access_key" {
+  value     = aws_iam_access_key.admin.secret
+  sensitive = true
+}
+
+output "admin_console_password" {
+  value     = aws_iam_user_login_profile.admin.password
+  sensitive = true
+}
+
+output "admin_console_login_url" {
+  value = "https://${data.aws_caller_identity.current.account_id}.signin.aws.amazon.com/console"
 }
