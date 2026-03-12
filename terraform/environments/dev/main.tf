@@ -22,6 +22,10 @@ terraform {
       source  = "hashicorp/time"
       version = "~> 0.12"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.0"
+    }
   }
 
   backend "s3" {
@@ -114,6 +118,16 @@ module "eks" {
 # Phase 2: ArgoCD
 ################################################################################
 
+resource "random_password" "dex_demo_client_secret" {
+  length  = 32
+  special = false
+}
+
+resource "random_password" "oauth2_proxy_cookie_secret" {
+  length  = 32
+  special = false
+}
+
 module "argocd" {
   source = "../../modules/argocd"
 
@@ -121,6 +135,11 @@ module "argocd" {
   git_target_revision  = var.git_target_revision
   argocd_apps_path     = "k8s/argocd"
   argocd_chart_version = var.argocd_chart_version
+
+  domain_name                = var.domain_name
+  github_client_id           = var.github_oauth_client_id
+  github_client_secret       = var.github_oauth_client_secret
+  dex_demo_app_client_secret = random_password.dex_demo_client_secret.result
 
   depends_on = [module.eks]
 }
@@ -135,31 +154,30 @@ module "dns" {
   domain_name  = var.domain_name
   cluster_name = local.cluster_name
 
-  enable_cognito_auth         = true
-  cognito_user_pool_arn       = module.cognito.user_pool_arn
-  cognito_user_pool_client_id = module.cognito.alb_client_id
-  cognito_user_pool_domain    = module.cognito.user_pool_domain
-
-  depends_on = [module.alb_controller, module.cognito]
+  depends_on = [module.alb_controller]
 }
 
-module "cognito" {
-  source = "../../modules/cognito"
+################################################################################
+# oauth2-proxy secret for demo app (uses ArgoCD Dex as OIDC provider)
+################################################################################
 
-  cluster_name         = local.cluster_name
-  domain_name          = var.domain_name
-  github_client_id     = var.github_oauth_client_id
-  github_client_secret = var.github_oauth_client_secret
+resource "kubectl_manifest" "oauth2_proxy_secret" {
+  yaml_body = yamlencode({
+    apiVersion = "v1"
+    kind       = "Secret"
+    metadata = {
+      name      = "oauth2-proxy"
+      namespace = "demo-app"
+    }
+    type = "Opaque"
+    stringData = {
+      client-id     = "demo-app"
+      client-secret = random_password.dex_demo_client_secret.result
+      cookie-secret = random_password.oauth2_proxy_cookie_secret.result
+    }
+  })
 
-  callback_urls = [
-    "https://argocd.${var.domain_name}/oauth2/idpresponse",
-    "https://demo.${var.domain_name}/oauth2/idpresponse",
-  ]
-
-  logout_urls = [
-    "https://argocd.${var.domain_name}",
-    "https://demo.${var.domain_name}",
-  ]
+  depends_on = [module.argocd]
 }
 
 module "alb_controller" {

@@ -20,3 +20,30 @@ variable "argocd_apps_path" {
   type        = string
   default     = "k8s/argocd"
 }
+
+variable "domain_name" {
+  description = "Root domain name for ArgoCD URL"
+  type        = string
+  default     = ""
+}
+
+variable "github_client_id" {
+  description = "GitHub OAuth App client ID for Dex"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "github_client_secret" {
+  description = "GitHub OAuth App client secret for Dex"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "dex_demo_app_client_secret" {
+  description = "Shared secret for demo-app oauth2-proxy to authenticate with Dex"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
