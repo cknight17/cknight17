@@ -28,6 +28,7 @@ resource "helm_release" "argocd" {
         "server.url" = "https://argocd.${var.domain_name}"
       }
       cm = {
+        "url" = "https://argocd.${var.domain_name}"
         "dex.config" = yamlencode({
           connectors = [{
             type = "github"
