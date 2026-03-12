@@ -100,8 +100,17 @@ resource "kubectl_manifest" "demo_app_ingress" {
 }
 
 ################################################################################
-# DNS Records (alias to the shared ALB)
+# Wait for ALB Controller to provision the load balancer
 ################################################################################
+
+resource "time_sleep" "wait_for_alb" {
+  create_duration = "60s"
+
+  depends_on = [
+    kubectl_manifest.argocd_ingress,
+    kubectl_manifest.demo_app_ingress,
+  ]
+}
 
 data "aws_lb" "ingress" {
   tags = {
@@ -110,11 +119,12 @@ data "aws_lb" "ingress" {
     "ingress.k8s.aws/stack"    = var.domain_name
   }
 
-  depends_on = [
-    kubectl_manifest.argocd_ingress,
-    kubectl_manifest.demo_app_ingress,
-  ]
+  depends_on = [time_sleep.wait_for_alb]
 }
+
+################################################################################
+# DNS Records (alias to the shared ALB)
+################################################################################
 
 resource "aws_route53_record" "argocd" {
   zone_id = aws_route53_zone.this.zone_id
