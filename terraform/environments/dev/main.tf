@@ -89,14 +89,14 @@ locals {
 ################################################################################
 
 module "vpc" {
-  source = "../../modules/vpc"
+  source = "git::https://github.com/cknight17/cknight17.git//terraform/modules/vpc?ref=v0.1.0"
 
   vpc_cidr     = var.vpc_cidr
   cluster_name = local.cluster_name
 }
 
 module "eks" {
-  source = "../../modules/eks"
+  source = "git::https://github.com/cknight17/cknight17.git//terraform/modules/eks?ref=v0.1.0"
 
   cluster_name        = local.cluster_name
   cluster_version     = var.cluster_version
@@ -129,7 +129,7 @@ resource "random_password" "oauth2_proxy_cookie_secret" {
 }
 
 module "argocd" {
-  source = "../../modules/argocd"
+  source = "git::https://github.com/cknight17/cknight17.git//terraform/modules/argocd?ref=v0.1.0"
 
   git_repo_url         = var.git_repo_url
   git_target_revision  = var.git_target_revision
@@ -149,14 +149,13 @@ module "argocd" {
 ################################################################################
 
 module "dns" {
-  source = "../../modules/dns"
+  source = "git::https://github.com/cknight17/cknight17.git//terraform/modules/dns?ref=v0.1.0"
 
   domain_name  = var.domain_name
   cluster_name = local.cluster_name
 
   depends_on = [module.alb_controller]
 }
-
 
 ################################################################################
 # oauth2-proxy secret for demo app (uses ArgoCD Dex as OIDC provider)
@@ -196,7 +195,7 @@ resource "aws_ecr_repository" "demo_app" {
 }
 
 module "alb_controller" {
-  source = "../../modules/alb-controller"
+  source = "git::https://github.com/cknight17/cknight17.git//terraform/modules/alb-controller?ref=v0.1.0"
 
   cluster_name      = local.cluster_name
   oidc_provider_arn = module.eks.oidc_provider_arn
@@ -211,7 +210,7 @@ module "alb_controller" {
 ################################################################################
 
 # module "aurora" {
-#   source = "../../modules/aurora"
+#   source = "git::https://github.com/cknight17/cknight17.git//terraform/modules/aurora?ref=v0.1.0"
 #
 #   cluster_name                  = local.cluster_name
 #   vpc_id                        = module.vpc.vpc_id
@@ -222,7 +221,7 @@ module "alb_controller" {
 # }
 
 # module "dynamodb" {
-#   source = "../../modules/dynamodb"
+#   source = "git::https://github.com/cknight17/cknight17.git//terraform/modules/dynamodb?ref=v0.1.0"
 #
 #   cluster_name      = local.cluster_name
 #   oidc_provider_arn = module.eks.oidc_provider_arn
@@ -230,7 +229,7 @@ module "alb_controller" {
 # }
 
 # module "s3" {
-#   source = "../../modules/s3"
+#   source = "git::https://github.com/cknight17/cknight17.git//terraform/modules/s3?ref=v0.1.0"
 #
 #   cluster_name      = local.cluster_name
 #   oidc_provider_arn = module.eks.oidc_provider_arn
