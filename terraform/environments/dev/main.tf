@@ -157,6 +157,19 @@ module "dns" {
   depends_on = [module.alb_controller]
 }
 
+# Cognito module kept temporarily for clean destroy (remove after apply)
+module "cognito" {
+  source = "../../modules/cognito"
+
+  cluster_name         = local.cluster_name
+  domain_name          = var.domain_name
+  github_client_id     = var.github_oauth_client_id
+  github_client_secret = var.github_oauth_client_secret
+
+  callback_urls = []
+  logout_urls   = []
+}
+
 ################################################################################
 # oauth2-proxy secret for demo app (uses ArgoCD Dex as OIDC provider)
 ################################################################################
