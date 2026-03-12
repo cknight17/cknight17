@@ -6,7 +6,7 @@ variable "cluster_name" {
 variable "cluster_version" {
   description = "Kubernetes version"
   type        = string
-  default     = "1.31"
+  default     = "1.32"
 }
 
 variable "vpc_id" {
@@ -52,4 +52,10 @@ variable "node_max_size" {
   description = "Maximum number of nodes"
   type        = number
   default     = 4
+}
+
+variable "admin_principal_arns" {
+  description = "IAM principal ARNs to grant cluster admin access"
+  type        = list(string)
+  default     = []
 }
