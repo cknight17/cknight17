@@ -30,3 +30,7 @@ output "argocd_url" {
 output "demo_app_url" {
   value = "https://demo.${var.domain_name}"
 }
+
+output "ecr_repo_url" {
+  value = aws_ecr_repository.demo_app.repository_url
+}
