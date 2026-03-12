@@ -25,6 +25,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Checkout PR branch (for issue_comment triggers)
+        if: github.event_name == 'issue_comment'
+        run: |
+          PR_NUMBER=$(echo '${{ github.event.issue.number }}')
+          PR_DATA=$(gh pr view "$PR_NUMBER" --json headRefName --jq '.headRefName')
+          git fetch origin "$PR_DATA"
+          git checkout "$PR_DATA"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Configure AWS Credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
