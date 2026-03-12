@@ -96,6 +96,31 @@ resource "aws_iam_openid_connect_provider" "cluster" {
 }
 
 ################################################################################
+# EKS Access Entries (cluster admin users)
+################################################################################
+
+resource "aws_eks_access_entry" "admins" {
+  for_each = toset(var.admin_principal_arns)
+
+  cluster_name  = aws_eks_cluster.this.name
+  principal_arn = each.value
+}
+
+resource "aws_eks_access_policy_association" "admins" {
+  for_each = toset(var.admin_principal_arns)
+
+  cluster_name  = aws_eks_cluster.this.name
+  principal_arn = each.value
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+
+  access_scope {
+    type = "cluster"
+  }
+
+  depends_on = [aws_eks_access_entry.admins]
+}
+
+################################################################################
 # Node Group IAM Role
 ################################################################################
 
