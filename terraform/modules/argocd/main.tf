@@ -17,10 +17,42 @@ resource "helm_release" "argocd" {
   wait             = true
   timeout          = 600
 
-  set {
-    name  = "server.service.type"
-    value = "ClusterIP"
-  }
+  values = [yamlencode({
+    server = {
+      service = {
+        type = "ClusterIP"
+      }
+    }
+    configs = {
+      params = {
+        "server.url" = "https://argocd.${var.domain_name}"
+      }
+      cm = {
+        "url" = "https://argocd.${var.domain_name}"
+        "dex.config" = yamlencode({
+          connectors = [{
+            type = "github"
+            id   = "github"
+            name = "GitHub"
+            config = {
+              clientID     = var.github_client_id
+              clientSecret = var.github_client_secret
+            }
+          }]
+          staticClients = [{
+            id           = "demo-app"
+            name         = "Demo App"
+            secret       = var.dex_demo_app_client_secret
+            redirectURIs = ["https://demo.${var.domain_name}/oauth2/callback"]
+          }]
+        })
+      }
+      rbac = {
+        "policy.csv"     = "g, cknight17, role:admin"
+        "policy.default" = "role:readonly"
+      }
+    }
+  })]
 
   # Reduce resource usage for dev
   set {

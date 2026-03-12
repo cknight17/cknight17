@@ -1,23 +1,4 @@
 ################################################################################
-# Locals
-################################################################################
-
-locals {
-  cognito_auth_annotations = var.enable_cognito_auth ? {
-    "alb.ingress.kubernetes.io/auth-type" = "cognito"
-    "alb.ingress.kubernetes.io/auth-idp-cognito" = jsonencode({
-      UserPoolArn      = var.cognito_user_pool_arn
-      UserPoolClientId = var.cognito_user_pool_client_id
-      UserPoolDomain   = var.cognito_user_pool_domain
-    })
-    "alb.ingress.kubernetes.io/auth-scope"                      = "openid email profile"
-    "alb.ingress.kubernetes.io/auth-session-cookie"             = "AWSELBAuthSessionCookie"
-    "alb.ingress.kubernetes.io/auth-session-timeout"            = "86400"
-    "alb.ingress.kubernetes.io/auth-on-unauthenticated-request" = "authenticate"
-  } : {}
-}
-
-################################################################################
 # Ingress: ArgoCD
 ################################################################################
 
@@ -28,20 +9,17 @@ resource "kubectl_manifest" "argocd_ingress" {
     metadata = {
       name      = "argocd-server"
       namespace = "argocd"
-      annotations = merge(
-        {
-          "kubernetes.io/ingress.class"                = "alb"
-          "alb.ingress.kubernetes.io/scheme"           = "internet-facing"
-          "alb.ingress.kubernetes.io/target-type"      = "ip"
-          "alb.ingress.kubernetes.io/certificate-arn"  = aws_acm_certificate.wildcard.arn
-          "alb.ingress.kubernetes.io/listen-ports"     = jsonencode([{ HTTPS = 443 }])
-          "alb.ingress.kubernetes.io/ssl-redirect"     = "443"
-          "alb.ingress.kubernetes.io/healthcheck-path" = "/healthz"
-          "alb.ingress.kubernetes.io/backend-protocol" = "HTTPS"
-          "alb.ingress.kubernetes.io/group.name"       = var.domain_name
-        },
-        local.cognito_auth_annotations,
-      )
+      annotations = {
+        "kubernetes.io/ingress.class"                = "alb"
+        "alb.ingress.kubernetes.io/scheme"           = "internet-facing"
+        "alb.ingress.kubernetes.io/target-type"      = "ip"
+        "alb.ingress.kubernetes.io/certificate-arn"  = aws_acm_certificate.wildcard.arn
+        "alb.ingress.kubernetes.io/listen-ports"     = jsonencode([{ HTTPS = 443 }])
+        "alb.ingress.kubernetes.io/ssl-redirect"     = "443"
+        "alb.ingress.kubernetes.io/healthcheck-path" = "/healthz"
+        "alb.ingress.kubernetes.io/backend-protocol" = "HTTPS"
+        "alb.ingress.kubernetes.io/group.name"       = var.domain_name
+      }
     }
     spec = {
       ingressClassName = "alb"
@@ -69,7 +47,7 @@ resource "kubectl_manifest" "argocd_ingress" {
 }
 
 ################################################################################
-# Ingress: Demo App
+# Ingress: Demo App (routes to oauth2-proxy sidecar on port 4180)
 ################################################################################
 
 resource "kubectl_manifest" "demo_app_ingress" {
@@ -79,19 +57,16 @@ resource "kubectl_manifest" "demo_app_ingress" {
     metadata = {
       name      = "demo-app"
       namespace = "demo-app"
-      annotations = merge(
-        {
-          "kubernetes.io/ingress.class"                = "alb"
-          "alb.ingress.kubernetes.io/scheme"           = "internet-facing"
-          "alb.ingress.kubernetes.io/target-type"      = "ip"
-          "alb.ingress.kubernetes.io/certificate-arn"  = aws_acm_certificate.wildcard.arn
-          "alb.ingress.kubernetes.io/listen-ports"     = jsonencode([{ HTTPS = 443 }])
-          "alb.ingress.kubernetes.io/ssl-redirect"     = "443"
-          "alb.ingress.kubernetes.io/healthcheck-path" = "/"
-          "alb.ingress.kubernetes.io/group.name"       = var.domain_name
-        },
-        local.cognito_auth_annotations,
-      )
+      annotations = {
+        "kubernetes.io/ingress.class"                = "alb"
+        "alb.ingress.kubernetes.io/scheme"           = "internet-facing"
+        "alb.ingress.kubernetes.io/target-type"      = "ip"
+        "alb.ingress.kubernetes.io/certificate-arn"  = aws_acm_certificate.wildcard.arn
+        "alb.ingress.kubernetes.io/listen-ports"     = jsonencode([{ HTTPS = 443 }])
+        "alb.ingress.kubernetes.io/ssl-redirect"     = "443"
+        "alb.ingress.kubernetes.io/healthcheck-path" = "/"
+        "alb.ingress.kubernetes.io/group.name"       = var.domain_name
+      }
     }
     spec = {
       ingressClassName = "alb"
