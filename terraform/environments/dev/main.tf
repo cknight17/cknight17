@@ -122,6 +122,30 @@ module "argocd" {
 }
 
 ################################################################################
+# DNS + ALB Ingress
+################################################################################
+
+module "dns" {
+  source = "../../modules/dns"
+
+  domain_name  = var.domain_name
+  cluster_name = local.cluster_name
+
+  depends_on = [module.alb_controller]
+}
+
+module "alb_controller" {
+  source = "../../modules/alb-controller"
+
+  cluster_name      = local.cluster_name
+  oidc_provider_arn = module.eks.oidc_provider_arn
+  oidc_provider_url = module.eks.oidc_provider_url
+  vpc_id            = module.vpc.vpc_id
+
+  depends_on = [module.eks]
+}
+
+################################################################################
 # Phase 3: External Resources (uncomment when ready)
 ################################################################################
 
