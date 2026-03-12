@@ -4,6 +4,7 @@ on:
   pull_request:
     branches: [main]
     types: [opened, synchronize, reopened, closed]
+    paths: [terraform/**, digger.yml]
   issue_comment:
     types: [created]
     # Digger responds to "digger plan" and "digger apply" PR comments
