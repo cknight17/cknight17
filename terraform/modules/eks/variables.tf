@@ -4,9 +4,15 @@ variable "cluster_name" {
 }
 
 variable "cluster_version" {
-  description = "Kubernetes version"
+  description = "Kubernetes version for the control plane"
   type        = string
   default     = "1.32"
+}
+
+variable "node_version" {
+  description = "Kubernetes version for the node group (must be <= cluster_version). Defaults to cluster_version."
+  type        = string
+  default     = null
 }
 
 variable "vpc_id" {

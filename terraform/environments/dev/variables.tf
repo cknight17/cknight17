@@ -24,6 +24,11 @@ variable "cluster_version" {
   default = "1.34"
 }
 
+variable "node_version" {
+  type    = string
+  default = "1.32"
+}
+
 variable "node_instance_types" {
   type    = list(string)
   default = ["t3.medium"]
