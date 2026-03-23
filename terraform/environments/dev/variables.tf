@@ -26,7 +26,7 @@ variable "cluster_version" {
 
 variable "node_version" {
   type    = string
-  default = "1.33"
+  default = "1.34"
 }
 
 variable "node_instance_types" {
