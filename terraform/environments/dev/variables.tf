@@ -21,7 +21,7 @@ variable "vpc_cidr" {
 
 variable "cluster_version" {
   type    = string
-  default = "1.32"
+  default = "1.35"
 }
 
 variable "node_instance_types" {
