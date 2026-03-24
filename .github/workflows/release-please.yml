@@ -20,6 +20,10 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Checkout
+        if: steps.release.outputs.pr
+        uses: actions/checkout@v5
+
       - name: Auto-merge release PR
         if: steps.release.outputs.pr
         run: gh pr merge --squash "$PR_NUMBER"
