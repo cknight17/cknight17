@@ -96,7 +96,7 @@ module "vpc" {
 }
 
 module "eks" {
-  source = "../../modules/eks"
+  source = "git::https://github.com/cknight17/cknight17.git//terraform/modules/eks?ref=v0.1.2"
 
   cluster_name        = local.cluster_name
   cluster_version     = var.cluster_version
