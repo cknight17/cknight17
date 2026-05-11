@@ -246,3 +246,67 @@ kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.pas
 - ALB: ~$16/mo
 - Route 53 hosted zone: ~$0.50/mo
 - **Total: ~$181/mo** (can scale down to 1 node / ~$151/mo)
+
+GPU spend is on top of this and only accrues while a GPU node is running — see below.
+
+## GPU Workloads
+
+The cluster runs CPU workloads on a fixed managed node group and provisions
+GPU nodes on demand via **Karpenter**. Idle cost: ~$0 (no GPU nodes running).
+Total spend is bounded by an AWS Budget alarm (default $100/mo, edit
+`monthly_budget_usd` to change).
+
+### Approximate GPU hourly cost (us-east-1)
+
+| Instance     | vCPU | GPU      | VRAM  | Spot     | On-Demand |
+|--------------|------|----------|-------|----------|-----------|
+| g6.xlarge    | 4    | 1× L4    | 24 GB | ~$0.25/h | ~$0.81/h  |
+| g6.2xlarge   | 8    | 1× L4    | 24 GB | ~$0.30/h | ~$0.97/h  |
+| g5.xlarge    | 4    | 1× A10G  | 24 GB | ~$0.30/h | ~$1.00/h  |
+| g5.2xlarge   | 8    | 1× A10G  | 24 GB | ~$0.35/h | ~$1.21/h  |
+
+Spot prices fluctuate; these are typical numbers. Karpenter prefers spot and
+falls through to on-demand only if spot capacity isn't available in the AZ.
+
+### Scheduling onto a GPU node
+
+GPU nodes are tainted `nvidia.com/gpu=true:NoSchedule` so regular workloads
+don't land on them. A training pod needs the matching toleration, the
+`workload: gpu-ml` node selector, and a `nvidia.com/gpu` resource request:
+
+```yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: trainer
+  namespace: cameron
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Equal
+          value: "true"
+          effect: NoSchedule
+      nodeSelector:
+        workload: gpu-ml
+      containers:
+        - name: trainer
+          image: <your image>
+          resources:
+            limits:
+              nvidia.com/gpu: 1
+```
+
+When the pod is unschedulable, Karpenter provisions a `g6.xlarge` or
+`g5.xlarge` (xlarge or 2xlarge) within ~45 seconds. When the pod finishes
+and the node sits empty for 30 seconds, Karpenter terminates it.
+
+### Guardrails
+
+- **NodePool CPU limit:** 32 vCPU total → at most ~4 single-GPU nodes
+  concurrently.
+- **AWS Budget:** alerts at 50% forecasted / 80% actual / 100% actual against
+  the monthly cap.
+- **`cameron` namespace ResourceQuota:** 2 GPUs, 16 vCPU, 64 Gi memory.

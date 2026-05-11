@@ -71,3 +71,15 @@ variable "domain_name" {
 
 # GitHub OAuth credentials are sourced from SSM Parameter Store (see main.tf).
 # Seed them once per environment with `make secrets`.
+
+variable "alert_email" {
+  description = "Email address that receives AWS Budget alerts"
+  type        = string
+  default     = "eknight17@gmail.com"
+}
+
+variable "monthly_budget_usd" {
+  description = "Monthly account spend ceiling in USD; alerts fire at 50/80/100%"
+  type        = string
+  default     = "100"
+}
