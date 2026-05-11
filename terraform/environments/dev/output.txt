@@ -1,0 +1,157 @@
+{
+    "SecurityGroups": [
+        {
+            "GroupId": "sg-03f5f2915883c78f2",
+            "IpPermissionsEgress": [
+                {
+                    "IpProtocol": "-1",
+                    "UserIdGroupPairs": [],
+                    "IpRanges": [
+                        {
+                            "CidrIp": "0.0.0.0/0"
+                        }
+                    ],
+                    "Ipv6Ranges": [],
+                    "PrefixListIds": []
+                }
+            ],
+            "Tags": [
+                {
+                    "Key": "elbv2.k8s.aws/cluster",
+                    "Value": "cknight17-dev"
+                },
+                {
+                    "Key": "elbv2.k8s.aws/resource",
+                    "Value": "backend-sg"
+                }
+            ],
+            "VpcId": "vpc-0db36260ff342e5a7",
+            "SecurityGroupArn": "arn:aws:ec2:us-east-1:659474314285:security-group/sg-03f5f2915883c78f2",
+            "OwnerId": "659474314285",
+            "GroupName": "k8s-traffic-cknight17dev-2cfade4e59",
+            "Description": "[k8s] Shared Backend SecurityGroup for LoadBalancer",
+            "IpPermissions": []
+        },
+        {
+            "GroupId": "sg-44841f30",
+            "IpPermissionsEgress": [
+                {
+                    "IpProtocol": "-1",
+                    "UserIdGroupPairs": [],
+                    "IpRanges": [
+                        {
+                            "CidrIp": "0.0.0.0/0"
+                        }
+                    ],
+                    "Ipv6Ranges": [],
+                    "PrefixListIds": []
+                }
+            ],
+            "VpcId": "vpc-f327188b",
+            "SecurityGroupArn": "arn:aws:ec2:us-east-1:659474314285:security-group/sg-44841f30",
+            "OwnerId": "659474314285",
+            "GroupName": "default",
+            "Description": "default VPC security group",
+            "IpPermissions": [
+                {
+                    "IpProtocol": "-1",
+                    "UserIdGroupPairs": [
+                        {
+                            "UserId": "659474314285",
+                            "GroupId": "sg-44841f30"
+                        }
+                    ],
+                    "IpRanges": [],
+                    "Ipv6Ranges": [],
+                    "PrefixListIds": []
+                }
+            ]
+        },
+        {
+            "GroupId": "sg-0504fa8dd1c61618d",
+            "IpPermissionsEgress": [
+                {
+                    "IpProtocol": "-1",
+                    "UserIdGroupPairs": [],
+                    "IpRanges": [
+                        {
+                            "CidrIp": "0.0.0.0/0"
+                        }
+                    ],
+                    "Ipv6Ranges": [],
+                    "PrefixListIds": []
+                }
+            ],
+            "Tags": [
+                {
+                    "Key": "ingress.k8s.aws/resource",
+                    "Value": "ManagedLBSecurityGroup"
+                },
+                {
+                    "Key": "ingress.k8s.aws/stack",
+                    "Value": "knighttechnology.net"
+                },
+                {
+                    "Key": "elbv2.k8s.aws/cluster",
+                    "Value": "cknight17-dev"
+                }
+            ],
+            "VpcId": "vpc-0db36260ff342e5a7",
+            "SecurityGroupArn": "arn:aws:ec2:us-east-1:659474314285:security-group/sg-0504fa8dd1c61618d",
+            "OwnerId": "659474314285",
+            "GroupName": "k8s-knighttechnologyn-8363a5117a",
+            "Description": "[k8s] Managed SecurityGroup for LoadBalancer",
+            "IpPermissions": [
+                {
+                    "IpProtocol": "tcp",
+                    "FromPort": 443,
+                    "ToPort": 443,
+                    "UserIdGroupPairs": [],
+                    "IpRanges": [
+                        {
+                            "Description": "",
+                            "CidrIp": "0.0.0.0/0"
+                        }
+                    ],
+                    "Ipv6Ranges": [],
+                    "PrefixListIds": []
+                }
+            ]
+        },
+        {
+            "GroupId": "sg-001daa517513490bb",
+            "IpPermissionsEgress": [
+                {
+                    "IpProtocol": "-1",
+                    "UserIdGroupPairs": [],
+                    "IpRanges": [
+                        {
+                            "CidrIp": "0.0.0.0/0"
+                        }
+                    ],
+                    "Ipv6Ranges": [],
+                    "PrefixListIds": []
+                }
+            ],
+            "VpcId": "vpc-0db36260ff342e5a7",
+            "SecurityGroupArn": "arn:aws:ec2:us-east-1:659474314285:security-group/sg-001daa517513490bb",
+            "OwnerId": "659474314285",
+            "GroupName": "default",
+            "Description": "default VPC security group",
+            "IpPermissions": [
+                {
+                    "IpProtocol": "-1",
+                    "UserIdGroupPairs": [
+                        {
+                            "UserId": "659474314285",
+                            "GroupId": "sg-001daa517513490bb"
+                        }
+                    ],
+                    "IpRanges": [],
+                    "Ipv6Ranges": [],
+                    "PrefixListIds": []
+                }
+            ]
+        }
+    ]
+}

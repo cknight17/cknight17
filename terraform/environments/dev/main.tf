@@ -82,6 +82,38 @@ data "aws_caller_identity" "current" {}
 
 locals {
   cluster_name = "${var.project}-${var.environment}"
+
+  # data.aws_caller_identity.current.arn returns an assumed-role session ARN
+  # (sts::...:assumed-role/<role>/<session>) when terraform is run via an
+  # assumed role (e.g. GHA OIDC). EKS access entries need the underlying
+  # IAM role ARN, so convert the session ARN back to its role ARN.
+  caller_is_assumed_role = can(regex("^arn:aws:sts::[0-9]+:assumed-role/", data.aws_caller_identity.current.arn))
+  caller_role_name       = local.caller_is_assumed_role ? regex("^arn:aws:sts::[0-9]+:assumed-role/([^/]+)/", data.aws_caller_identity.current.arn)[0] : ""
+  caller_principal_arn = local.caller_is_assumed_role ? format(
+    "arn:aws:iam::%s:role/%s",
+    data.aws_caller_identity.current.account_id,
+    local.caller_role_name,
+  ) : data.aws_caller_identity.current.arn
+
+  github_actions_role_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.project}-github-actions"
+}
+
+################################################################################
+# Secrets (sourced from SSM so they aren't passed as tfvars)
+#
+# Seed these once per environment with `make secrets`:
+#   /<project>/<env>/github-oauth/client-id      (SecureString)
+#   /<project>/<env>/github-oauth/client-secret  (SecureString)
+################################################################################
+
+data "aws_ssm_parameter" "github_oauth_client_id" {
+  name            = "/${var.project}/${var.environment}/github-oauth/client-id"
+  with_decryption = true
+}
+
+data "aws_ssm_parameter" "github_oauth_client_secret" {
+  name            = "/${var.project}/${var.environment}/github-oauth/client-secret"
+  with_decryption = true
 }
 
 ################################################################################
@@ -109,9 +141,10 @@ module "eks" {
   node_min_size       = var.node_min_size
   node_max_size       = var.node_max_size
 
-  admin_principal_arns = [
-    "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/cknight"
-  ]
+  admin_principal_arns = distinct(compact([
+    local.caller_principal_arn,
+    local.github_actions_role_arn,
+  ]))
 }
 
 ################################################################################
@@ -137,8 +170,8 @@ module "argocd" {
   argocd_chart_version = var.argocd_chart_version
 
   domain_name                = var.domain_name
-  github_client_id           = var.github_oauth_client_id
-  github_client_secret       = var.github_oauth_client_secret
+  github_client_id           = data.aws_ssm_parameter.github_oauth_client_id.value
+  github_client_secret       = data.aws_ssm_parameter.github_oauth_client_secret.value
   dex_demo_app_client_secret = random_password.dex_demo_client_secret.result
 
   depends_on = [module.eks]
@@ -203,6 +236,37 @@ module "alb_controller" {
   vpc_id            = module.vpc.vpc_id
 
   depends_on = [module.eks]
+}
+
+################################################################################
+# Pre-destroy ALB cleanup
+#
+# Forces in-cluster Ingress/LoadBalancer-Service objects to be deleted and
+# waits for the ALB controller to finish removing the underlying ALBs and
+# security groups before Terraform tears down the controller, EKS, and VPC.
+#
+# Without this, the controller is destroyed mid-cleanup and orphan k8s-*
+# security groups block VPC deletion. `make destroy` runs the same script
+# explicitly first; this terraform_data is the safety net for direct
+# `terraform destroy` invocations.
+################################################################################
+
+resource "terraform_data" "alb_cleanup" {
+  input = {
+    cluster_name = local.cluster_name
+    region       = var.aws_region
+    script       = "${path.module}/cleanup-alb.sh"
+  }
+
+  depends_on = [
+    module.alb_controller,
+    module.dns,
+  ]
+
+  provisioner "local-exec" {
+    when    = destroy
+    command = "${self.input.script} ${self.input.cluster_name} ${self.input.region}"
+  }
 }
 
 ################################################################################

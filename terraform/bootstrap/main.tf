@@ -40,9 +40,6 @@ variable "admin_username" {
 resource "aws_s3_bucket" "terraform_state" {
   bucket = "cknight17-terraform-state-${data.aws_caller_identity.current.account_id}"
 
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
 resource "aws_s3_bucket_versioning" "terraform_state" {
