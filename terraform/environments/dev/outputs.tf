@@ -34,3 +34,56 @@ output "demo_app_url" {
 output "ecr_repo_url" {
   value = aws_ecr_repository.demo_app.repository_url
 }
+
+################################################################################
+# Cameron — namespaced access
+################################################################################
+
+output "cameron_access_key_id" {
+  value       = aws_iam_access_key.cameron.id
+  description = "IAM access key id for cameron (share with him directly)"
+}
+
+output "cameron_secret_access_key" {
+  value       = aws_iam_access_key.cameron.secret
+  sensitive   = true
+  description = "IAM secret access key for cameron (sensitive)"
+}
+
+output "cameron_kubeconfig" {
+  description = "kubeconfig snippet for cameron — fill the AWS creds in his ~/.aws/credentials under [cameron]"
+  value = yamlencode({
+    apiVersion      = "v1"
+    kind            = "Config"
+    current-context = "cameron@${module.eks.cluster_name}"
+    clusters = [{
+      name = module.eks.cluster_name
+      cluster = {
+        server                     = module.eks.cluster_endpoint
+        certificate-authority-data = module.eks.cluster_certificate_authority_data
+      }
+    }]
+    contexts = [{
+      name = "cameron@${module.eks.cluster_name}"
+      context = {
+        cluster   = module.eks.cluster_name
+        user      = "cameron"
+        namespace = "cameron"
+      }
+    }]
+    users = [{
+      name = "cameron"
+      user = {
+        exec = {
+          apiVersion = "client.authentication.k8s.io/v1beta1"
+          command    = "aws"
+          args       = ["eks", "get-token", "--cluster-name", module.eks.cluster_name, "--region", var.aws_region]
+          env = [{
+            name  = "AWS_PROFILE"
+            value = "cameron"
+          }]
+        }
+      }
+    }]
+  })
+}
